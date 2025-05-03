@@ -63,4 +63,9 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
+
+    public function agricultor()
+    {
+        return $this->hasOne(Agricultor::class);
+    }
 }

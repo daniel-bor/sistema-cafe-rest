@@ -27,3 +27,12 @@ Route::middleware(['auth:api'])->group(function () {
     Route::put('/agricultores/{id}', [AgricultorController::class, 'update']);
     Route::delete('/agricultores/{id}', [AgricultorController::class, 'destroy']);
 });
+
+
+Route::prefix('agricultor')->middleware(['auth:api'])->group(function () {
+    Route::get('perfil', [AgricultorController::class, 'perfil']);
+    Route::post('solicitudes', [SolicitudPesajeController::class, 'store']);
+});
+
+Route::post('parcialidades', [ParcialidadController::class, 'store']);
+

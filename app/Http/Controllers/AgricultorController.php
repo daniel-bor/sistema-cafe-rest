@@ -3,81 +3,74 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agricultor;
+use App\Models\SolicitudPesaje;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AgricultorController extends Controller
 {
-    public function index()
+    /**
+     * Mostrar perfil del agricultor autenticado
+     */
+    public function perfil()
     {
-        $this->authorize('viewAny', Agricultor::class); // Requiere policy opcional
+        $agricultor = Agricultor::where('user_id', Auth::id())->first();
 
-        return Agricultor::all();
-    }
-
-    public function show($id)
-    {
-        $agricultor = Agricultor::find($id);
         if (!$agricultor) {
             return response()->json(['error' => 'Agricultor no encontrado'], 404);
         }
 
-        $this->authorize('view', $agricultor);
-
         return response()->json($agricultor);
     }
 
-    public function store(Request $request)
+    /**
+     * Mostrar todas las solicitudes del agricultor autenticado
+     */
+    public function misSolicitudes()
     {
-        if (!Auth::user()->hasRole('admin')) {
-            return response()->json(['error' => 'No autorizado'], 403);
+        $agricultor = Agricultor::where('user_id', Auth::id())->first();
+
+        if (!$agricultor) {
+            return response()->json(['error' => 'Agricultor no encontrado'], 404);
         }
 
-        $validated = $request->validate([
-            'nit'         => 'required|string|unique:agricultores,nit',
-            'nombre'      => 'required|string|max:100',
-            'apellido'    => 'required|string|max:100',
-            'telefono'    => 'nullable|string|max:20',
-            'direccion'   => 'nullable|string|max:100',
-            'observaciones' => 'nullable|string',
-            'user_id'     => 'required|exists:users,id',
+        $solicitudes = SolicitudPesaje::where('agricultor_id', $agricultor->id)->with('estado')->get();
+
+        return response()->json($solicitudes);
+    }
+
+    /**
+     * Crear una solicitud de pesaje
+     */
+    public function enviarSolicitud(Request $request)
+    {
+        $request->validate([
+            'cantidad_total' => 'required|numeric|min:0',
+            'medida_peso_id' => 'required|exists:medidas_peso,id',
+            'tolerancia' => 'required|numeric|min:0|max:100',
+            'precio_unitario' => 'required|numeric|min:0',
+            'cantidad_parcialidades' => 'required|integer|min:1'
         ]);
 
-        $agricultor = Agricultor::create($validated);
+        $agricultor = Agricultor::where('user_id', Auth::id())->first();
 
-        return response()->json($agricultor, 201);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $agricultor = Agricultor::find($id);
         if (!$agricultor) {
             return response()->json(['error' => 'Agricultor no encontrado'], 404);
         }
 
-        if (!Auth::user()->hasRole('admin') && Auth::id() !== $agricultor->user_id) {
-            return response()->json(['error' => 'No autorizado para modificar este agricultor'], 403);
-        }
+        $solicitud = SolicitudPesaje::create([
+            'cantidad_total' => $request->cantidad_total,
+            'medida_peso_id' => $request->medida_peso_id,
+            'tolerancia' => $request->tolerancia,
+            'precio_unitario' => $request->precio_unitario,
+            'cantidad_parcialidades' => $request->cantidad_parcialidades,
+            'estado_id' => 1, // Estado inicial (ej: PENDIENTE)
+            'agricultor_id' => $agricultor->id,
+        ]);
 
-        $agricultor->update($request->only([
-            'nombre', 'apellido', 'telefono', 'direccion', 'observaciones'
-        ]));
-
-        return response()->json($agricultor);
-    }
-
-    public function destroy($id)
-    {
-        $agricultor = Agricultor::find($id);
-        if (!$agricultor) {
-            return response()->json(['error' => 'Agricultor no encontrado'], 404);
-        }
-
-        if (!Auth::user()->hasRole('admin')) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
-
-        $agricultor->delete();
-        return response()->json(['message' => 'Agricultor eliminado (soft delete)']);
+        return response()->json([
+            'message' => 'Solicitud enviada correctamente',
+            'solicitud' => $solicitud
+        ], 201);
     }
 }
