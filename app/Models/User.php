@@ -70,9 +70,9 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasOne(Agricultor::class);
     }
-    public function rol()
-{
-    return $this->belongsTo(Rol::class);
-}
 
+    public function rol()
+    {
+        return $this->belongsTo(Rol::class);
+    }
 }

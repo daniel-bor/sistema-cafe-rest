@@ -25,9 +25,13 @@ class TransporteController extends Controller
         ]);
 
         $agricultor = Auth::user()->agricultor;
+        if (!$agricultor) {
+            return response()->json(['error' => 'Agricultor no encontrado'], 404);
+        }
+
         $estadoActivo = Estado::where('nombre', 'Activo')
-                             ->where('contexto', 'transporte')
-                             ->first()->id;
+            ->where('contexto', 'transporte')
+            ->first()->id;
 
         $transporte = Transporte::create([
             'placa' => $request->placa,
@@ -48,16 +52,16 @@ class TransporteController extends Controller
     {
         $agricultor = Auth::user()->agricultor;
         $transporte = Transporte::where('id', $id)
-                                ->where('agricultor_id', $agricultor->id)
-                                ->firstOrFail();
-        
+            ->where('agricultor_id', $agricultor->id)
+            ->firstOrFail();
+
         return response()->json($transporte);
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
-            'placa' => 'sometimes|required|string|max:10|unique:transportes,placa,'.$id,
+            'placa' => 'sometimes|required|string|max:10|unique:transportes,placa,' . $id,
             'marca' => 'sometimes|required|string|max:50',
             'color' => 'sometimes|required|string|max:20',
             'disponible' => 'sometimes|boolean',
@@ -65,11 +69,14 @@ class TransporteController extends Controller
 
         $agricultor = Auth::user()->agricultor;
         $transporte = Transporte::where('id', $id)
-                                ->where('agricultor_id', $agricultor->id)
-                                ->firstOrFail();
+            ->where('agricultor_id', $agricultor->id)
+            ->firstOrFail();
 
         $transporte->update($request->only([
-            'placa', 'marca', 'color', 'disponible'
+            'placa',
+            'marca',
+            'color',
+            'disponible'
         ]));
 
         return response()->json([
@@ -82,11 +89,11 @@ class TransporteController extends Controller
     {
         $agricultor = Auth::user()->agricultor;
         $transporte = Transporte::where('id', $id)
-                                ->where('agricultor_id', $agricultor->id)
-                                ->firstOrFail();
-        
+            ->where('agricultor_id', $agricultor->id)
+            ->firstOrFail();
+
         $transporte->delete();
-        
+
         return response()->json([
             'message' => 'Transporte eliminado con éxito'
         ]);

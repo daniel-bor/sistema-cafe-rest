@@ -27,7 +27,7 @@ class AuthController extends Controller
             'direccion' => 'nullable|string|max:100',
             'observaciones' => 'nullable|string',
         ]);
-    
+
         // Corregir 'rol-id' a 'rol_id'
         $user = User::create([
             'name'     => $request->name,
@@ -35,14 +35,14 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'rol_id'   => $request->rol_id ?? 1, // Asignar rol de agricultor por defecto
         ]);
-    
+
         // Si el usuario es un agricultor (rol_id = 1), crear registro en tabla agricultores
         if ($user->rol_id == 1) {
             // Extraer nombre y apellido del name (o usar valores predeterminados)
             $nombreCompleto = explode(' ', $user->name, 2);
             $nombre = $nombreCompleto[0];
             $apellido = $nombreCompleto[1] ?? '';
-    
+
             Agricultor::create([
                 'nit'          => $request->nit ?? 'Pendiente',
                 'nombre'       => $nombre,
@@ -53,18 +53,19 @@ class AuthController extends Controller
                 'user_id'      => $user->id,
             ]);
         }
-    
+
         try {
             $token = JWTAuth::fromUser($user);
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not create token'], 500);
         }
-    
+
         return response()->json([
             'token' => $token,
             'user'  => $user,
         ], 201);
     }
+
 
     public function login(Request $request)
     {
@@ -75,7 +76,13 @@ class AuthController extends Controller
                 return response()->json(['error' => 'Invalid credentials'], 401);
             }
         } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
+            return response()->json([
+                'error' => 'Could not create token',
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ], 500);
         }
 
         return response()->json([
@@ -83,6 +90,8 @@ class AuthController extends Controller
             'expires_in' => JWTauth::factory()->getTTL() * 60,
         ]);
     }
+
+
     public function logout()
     {
         try {
@@ -91,7 +100,7 @@ class AuthController extends Controller
             if (!$token) {
                 return response()->json(['message' => 'Ya ha cerrado sesión'], 200);
             }
-            
+
             JWTAuth::invalidate($token);
             return response()->json(['message' => 'Sesión cerrada con éxito']);
         } catch (TokenExpiredException $e) {
@@ -107,7 +116,7 @@ class AuthController extends Controller
         }
     }
 
-    
+
 
     public function getUser()
     {

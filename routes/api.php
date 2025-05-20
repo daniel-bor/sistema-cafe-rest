@@ -33,11 +33,11 @@ Route::middleware(['auth:api'])->group(function () {
 });
 
 // Rutas para el rol Agricultor
-Route::prefix('agricultor')->middleware(['auth:api','es.agricultor'])->group(function () {
+Route::prefix('agricultor')->middleware(['auth:api'])->group(function () {
     Route::get('perfil', [AgricultorController::class, 'perfil']);
     Route::get('solicitudes', [AgricultorController::class, 'misSolicitudes']);
     Route::post('solicitudes', [SolicitudPesajeController::class, 'store']);
-    
+
     // API Resources para el agricultor
     Route::apiResource('transportes', TransporteController::class);
     Route::apiResource('transportistas', TransportistaController::class);

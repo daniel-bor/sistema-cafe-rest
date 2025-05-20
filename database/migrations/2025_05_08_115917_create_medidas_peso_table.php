@@ -18,14 +18,6 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
-        
-        // Insertar medidas de peso básicas
-        DB::table('medidas_peso')->insert([
-            ['nombre' => 'Kilogramos', 'simbolo' => 'kg', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Quintales', 'simbolo' => 'qq', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Libras', 'simbolo' => 'lb', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Toneladas', 'simbolo' => 't', 'created_at' => now(), 'updated_at' => now()]
-        ]);
     }
 
     /**
