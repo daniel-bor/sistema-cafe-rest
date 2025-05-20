@@ -9,6 +9,8 @@ class Agricultor extends Model
 {
     use SoftDeletes;
 
+    protected $table = 'agricultores';
+
     protected $fillable = [
         'nit',
         'nombre',
@@ -23,4 +25,25 @@ class Agricultor extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+    //codigo agregado Rzapet
+    public function transportes()
+    {
+        return $this->hasMany(Transporte::class);
+    }
+
+    public function transportistas()
+    {
+        return $this->hasMany(Transportista::class);
+    }
+
+    public function solicitudesPesaje()
+    {
+        return $this->hasMany(SolicitudPesaje::class);
+    }
+
+    public function cuentas()
+    {
+        return $this->hasMany(Cuenta::class);
+    }
+
 }
