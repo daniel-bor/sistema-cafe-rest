@@ -34,13 +34,7 @@ class Estado extends Model
         return $this->hasMany(Transportista::class);
     }
 
-    /**
-     * Relación con SolicitudesPesaje
-     */
-    public function solicitudesPesaje()
-    {
-        return $this->hasMany(SolicitudPesaje::class);
-    }
+   
 
     /**
      * Relación con Cuentas

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Beneficio;
 use App\Models\Agricultor;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -16,55 +17,72 @@ use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 class AuthController extends Controller
 {
     public function register(Request $request)
-    {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-            // Campos opcionales para agricultor
-            'nit'      => 'nullable|string|max:20',
-            'telefono' => 'nullable|string|max:20',
-            'direccion' => 'nullable|string|max:100',
-            'observaciones' => 'nullable|string',
+{
+    $request->validate([
+        'name'     => 'required|string|max:255',
+        'email'    => 'required|string|email|max:255|unique:users',
+        'password' => 'required|string|min:6|confirmed',
+        'rol_id'   => 'required|integer|exists:roles,id',
+        // Campos opcionales para agricultor
+        'nit'      => 'nullable|string|max:20',
+        'telefono' => 'nullable|string|max:20',
+        'direccion' => 'nullable|string|max:100',
+        'observaciones' => 'nullable|string',
+        // Campos opcionales para beneficio
+        'nombre_beneficio' => 'nullable|string|max:100',
+        'descripcion' => 'nullable|string',
+    ]);
+
+    $user = User::create([
+        'name'     => $request->name,
+        'email'    => $request->email,
+        'password' => Hash::make($request->password),
+        'rol_id'   => $request->rol_id ?? 1, // Asignar rol de agricultor por defecto
+    ]);
+
+    // Si el usuario es un agricultor (rol_id = 1)
+    if ($user->rol_id == 1) {
+        // Extraer nombre y apellido del name (o usar valores predeterminados)
+        $nombreCompleto = explode(' ', $user->name, 2);
+        $nombre = $nombreCompleto[0];
+        $apellido = $nombreCompleto[1] ?? '';
+
+        Agricultor::create([
+            'nit'          => $request->nit ?? 'Pendiente',
+            'nombre'       => $nombre,
+            'apellido'     => $apellido,
+            'telefono'     => $request->telefono,
+            'direccion'    => $request->direccion,
+            'observaciones' => $request->observaciones,
+            'user_id'      => $user->id,
         ]);
-
-        // Corregir 'rol-id' a 'rol_id'
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'rol_id'   => $request->rol_id ?? 1, // Asignar rol de agricultor por defecto
-        ]);
-
-        // Si el usuario es un agricultor (rol_id = 1), crear registro en tabla agricultores
-        if ($user->rol_id == 1) {
-            // Extraer nombre y apellido del name (o usar valores predeterminados)
-            $nombreCompleto = explode(' ', $user->name, 2);
-            $nombre = $nombreCompleto[0];
-            $apellido = $nombreCompleto[1] ?? '';
-
-            Agricultor::create([
-                'nit'          => $request->nit ?? 'Pendiente',
-                'nombre'       => $nombre,
-                'apellido'     => $apellido,
-                'telefono'     => $request->telefono,
-                'direccion'    => $request->direccion,
-                'observaciones' => $request->observaciones,
-                'user_id'      => $user->id,
-            ]);
-        }
-
-        try {
-            $token = JWTAuth::fromUser($user);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
-        }
-
-        return response()->json([
-            'token' => $token,
-            'user'  => $user,
-        ], 201);
     }
+    
+    // Si el usuario es un beneficio (rol_id = 2)
+    if ($user->rol_id == 2) {
+        // Importa el modelo Beneficio al principio del archivo
+        // use App\Models\Beneficio;
+        Beneficio::create([
+            'nombre'      => $request->nombre_beneficio ?? $user->name,
+            'direccion'   => $request->direccion,
+            'telefono'    => $request->telefono,
+            'descripcion' => $request->descripcion ?? 'Beneficio registrado',
+            'user_id'     => $user->id,
+        ]);
+    }
+
+    try {
+        $token = JWTAuth::fromUser($user);
+    } catch (JWTException $e) {
+        return response()->json(['error' => 'Could not create token'], 500);
+    }
+
+    return response()->json([
+        'token' => $token,
+        'user'  => $user,
+    ], 201);
+}
+    
 
 
     public function login(Request $request)

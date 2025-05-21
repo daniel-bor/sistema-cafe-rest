@@ -17,6 +17,7 @@ class Parcialidad extends Model
         'transporte_id',
         'transportista_id',
         'peso',
+        'peso_bascula',
         'tipo_medida',
         'fecha_recepcion',
         'estado_id',

@@ -16,8 +16,7 @@ class Cuenta extends Model
         'no_cuenta',
         'estado_id',
         'agricultor_id',
-        'solicitud_id',
-        'tolerancia'
+
     ];
 
     /**
@@ -36,13 +35,7 @@ class Cuenta extends Model
         return $this->belongsTo(Agricultor::class);
     }
 
-    /**
-     * Relación con SolicitudPesaje
-     */
-    public function solicitudPesaje()
-    {
-        return $this->belongsTo(SolicitudPesaje::class, 'solicitud_id');
-    }
+   
 
     /**
      * Relación con Pesaje

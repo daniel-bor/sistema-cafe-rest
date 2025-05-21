@@ -28,38 +28,33 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,       // Crear roles en tabla de permisos
             UserSeeder::class,       // Crear usuarios
             AgricultorSeeder::class, // Crear agricultor para el usuario con rol de agricultor
+            BeneficioSeeder::class,  // Crear beneficio para el usuario con rol de beneficio
         ]);
 
-        // Insertar estados iniciales
-        DB::table('estados')->insert([
+       DB::table('estados')->insert([
             // Estados para transportes y transportistas
             ['nombre' => 'Activo', 'contexto' => 'transporte', 'created_at' => now(), 'updated_at' => now()],
             ['nombre' => 'Inactivo', 'contexto' => 'transporte', 'created_at' => now(), 'updated_at' => now()],
             ['nombre' => 'Activo', 'contexto' => 'transportista', 'created_at' => now(), 'updated_at' => now()],
             ['nombre' => 'Inactivo', 'contexto' => 'transportista', 'created_at' => now(), 'updated_at' => now()],
 
-            // Estados para solicitudes de pesaje
-            ['nombre' => 'Registrada', 'contexto' => 'solicitud', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'En Proceso', 'contexto' => 'solicitud', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Completada', 'contexto' => 'solicitud', 'created_at' => now(), 'updated_at' => now()],
-
             // Estados para cuentas
-            ['nombre' => 'Registrada', 'contexto' => 'cuenta', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Cuenta Creada', 'contexto' => 'cuenta', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Cuenta Abierta', 'contexto' => 'cuenta', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Cuenta Cerrada', 'contexto' => 'cuenta', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Cuenta Confirmada', 'contexto' => 'cuenta', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Creada', 'contexto' => 'cuenta', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Abierta', 'contexto' => 'cuenta', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Cerrada', 'contexto' => 'cuenta', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Confirmada', 'contexto' => 'cuenta', 'created_at' => now(), 'updated_at' => now()],
 
             // Estados para pesajes
-            ['nombre' => 'Sin Peso', 'contexto' => 'pesaje', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Pendiente de Verificación', 'contexto' => 'pesaje', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Pesaje Iniciado', 'contexto' => 'pesaje', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Pesaje Finalizado', 'contexto' => 'pesaje', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Pendiente', 'contexto' => 'pesaje', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Aprobado', 'contexto' => 'pesaje', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Iniciado', 'contexto' => 'pesaje', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Finalizado', 'contexto' => 'pesaje', 'created_at' => now(), 'updated_at' => now()],
 
             // Estados para parcialidades
             ['nombre' => 'Pendiente', 'contexto' => 'parcialidad', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Aceptada', 'contexto' => 'parcialidad', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Aprobada', 'contexto' => 'parcialidad', 'created_at' => now(), 'updated_at' => now()],
             ['nombre' => 'Rechazada', 'contexto' => 'parcialidad', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Verificada', 'contexto' => 'parcialidad', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         // Insertar medidas de peso básicas

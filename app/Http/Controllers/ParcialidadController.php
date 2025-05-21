@@ -4,11 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Parcialidad;
 use App\Models\Pesaje;
-use App\Models\Cuenta;
-use App\Models\Estado;
 use App\Models\Transporte;
 use App\Models\Transportista;
-use App\Models\SolicitudPesaje;
+use App\Models\Estado;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -20,10 +18,8 @@ class ParcialidadController extends Controller
     {
         $agricultor = Auth::user()->agricultor;
         $parcialidades = Parcialidad::whereHas('pesaje', function($query) use ($agricultor) {
-            $query->whereHas('cuenta', function($q) use ($agricultor) {
-                $q->where('agricultor_id', $agricultor->id);
-            });
-        })->with(['transporte', 'transportista', 'estado', 'pesaje'])->get();
+            $query->where('agricultor_id', $agricultor->id);
+        })->with(['pesaje', 'transporte', 'transportista', 'estado'])->get();
         
         return response()->json($parcialidades);
     }
@@ -42,57 +38,56 @@ class ParcialidadController extends Controller
         
         // Verificar que el pesaje pertenezca al agricultor
         $pesaje = Pesaje::where('id', $request->pesaje_id)
-                        ->whereHas('cuenta', function($query) use ($agricultor) {
-                            $query->where('agricultor_id', $agricultor->id);
-                        })
-                        ->with(['solicitudPesaje', 'estado', 'medidaPeso'])  // Cargar relaciones necesarias
+                        ->where('agricultor_id', $agricultor->id)
+                        ->with(['medidaPeso'])
                         ->first();
         
         if (!$pesaje) {
             return response()->json(['message' => 'El pesaje no existe o no pertenece a este agricultor'], 404);
         }
         
-        // Verificar que el estado del pesaje permita nuevas parcialidades
-        // Actualizado para usar los nuevos estados
-        $estadosPermitidos = ['Sin Peso', 'Pendiente de Verificación', 'Registrada'];
-        $estadoActual = $pesaje->estado->nombre;
-
-        if (!in_array($estadoActual, $estadosPermitidos)) {
+        // Verificar que el estado del pesaje permita añadir parcialidades
+        $estadosPermitidos = ['Pendiente', 'Aprobado', 'En Proceso'];
+        
+        if (!in_array($pesaje->estado->nombre, $estadosPermitidos)) {
             return response()->json([
                 'message' => 'No se pueden agregar parcialidades en el estado actual del pesaje',
-                'estado_actual' => $estadoActual,
+                'estado_actual' => $pesaje->estado->nombre,
                 'estados_permitidos' => $estadosPermitidos
             ], 400);
         }
         
         // Verificar que el transporte pertenezca al agricultor
         $transporte = Transporte::where('id', $request->transporte_id)
-                               ->where('agricultor_id', $agricultor->id)
-                               ->first();
+                              ->where('agricultor_id', $agricultor->id)
+                              ->first();
         
         if (!$transporte) {
             return response()->json(['message' => 'El transporte no existe o no pertenece a este agricultor'], 404);
         }
         
-        if (!$transporte->disponible) {
-            return response()->json(['message' => 'El transporte seleccionado no está disponible actualmente'], 400);
-        }
-        
         // Verificar que el transportista pertenezca al agricultor
         $transportista = Transportista::where('id', $request->transportista_id)
-                                     ->where('agricultor_id', $agricultor->id)
-                                     ->first();
+                                    ->where('agricultor_id', $agricultor->id)
+                                    ->first();
         
         if (!$transportista) {
             return response()->json(['message' => 'El transportista no existe o no pertenece a este agricultor'], 404);
         }
         
-        if (!$transportista->disponible) {
-            return response()->json(['message' => 'El transportista seleccionado no está disponible actualmente'], 400);
+        // Verificar cantidad de parcialidades
+        $parcialidadesActuales = Parcialidad::where('pesaje_id', $pesaje->id)->count();
+        
+        if ($parcialidadesActuales >= $pesaje->cantidad_parcialidades) {
+            return response()->json([
+                'message' => 'No se puede agregar más parcialidades. Ya se alcanzó el límite especificado',
+                'parcialidades_actuales' => $parcialidadesActuales,
+                'parcialidades_permitidas' => $pesaje->cantidad_parcialidades
+            ], 400);
         }
         
-        // Validar que la medida de peso coincida con la del pesaje
-        if ($pesaje->medidaPeso && $request->tipo_medida != $pesaje->medidaPeso->nombre) {
+        // Verificar tipo de medida
+        if ($pesaje->medidaPeso->nombre != $request->tipo_medida) {
             return response()->json([
                 'message' => 'La medida de la parcialidad debe coincidir con la medida del pesaje',
                 'medida_pesaje' => $pesaje->medidaPeso->nombre,
@@ -100,21 +95,9 @@ class ParcialidadController extends Controller
             ], 400);
         }
         
-        // Verificar límite de parcialidades
-        $solicitud = $pesaje->solicitudPesaje;
-        $parcialidadesActuales = Parcialidad::where('pesaje_id', $pesaje->id)->count();
-        
-        if ($parcialidadesActuales >= $solicitud->cantidad_parcialidades) {
-            return response()->json([
-                'message' => 'No se puede agregar más parcialidades. Ya se alcanzó el límite especificado en la solicitud',
-                'parcialidades_actuales' => $parcialidadesActuales,
-                'parcialidades_permitidas' => $solicitud->cantidad_parcialidades
-            ], 400);
-        }
-        
         // Verificar límite de peso
         $pesoFuturo = $pesaje->peso_total + $request->peso;
-        $pesoMaximoPermitido = $solicitud->cantidad_total * (1 + ($solicitud->tolerancia / 100));
+        $pesoMaximoPermitido = $pesaje->cantidad_total * (1 + ($pesaje->tolerancia / 100));
         
         if ($pesoFuturo > $pesoMaximoPermitido) {
             return response()->json([
@@ -123,15 +106,15 @@ class ParcialidadController extends Controller
                 'peso_a_agregar' => $request->peso,
                 'peso_resultante' => $pesoFuturo,
                 'peso_maximo' => $pesoMaximoPermitido,
-                'cantidad_solicitud' => $solicitud->cantidad_total,
-                'tolerancia' => $solicitud->tolerancia . '%'
+                'cantidad_total' => $pesaje->cantidad_total,
+                'tolerancia' => $pesaje->tolerancia . '%'
             ], 400);
         }
         
-        // Obtener estado "Pendiente" para parcialidades nuevas
-        $estadoPendiente = Estado::whereRaw('LOWER(nombre) = ?', [strtolower('Pendiente')])
-                        ->where('contexto', 'parcialidad')
-                        ->firstOrFail()->id;
+        // Obtener estado pendiente para parcialidad
+        $estadoPendiente = Estado::where('nombre', 'Pendiente')
+                                ->where('contexto', 'parcialidad')
+                                ->firstOrFail()->id;
         
         // Generar código QR único
         $codigoQR = 'PAR-' . Str::random(10) . '-' . time();
@@ -150,73 +133,12 @@ class ParcialidadController extends Controller
                 'codigo_qr' => $codigoQR,
             ]);
             
-            // Actualizar el peso total del pesaje
-            $pesoActual = $pesaje->peso_total + $request->peso;
-            $pesaje->peso_total = $pesoActual;
-            
-            // Si esta es la primera parcialidad, actualizar estados
-            $parcialidadesCount = Parcialidad::where('pesaje_id', $pesaje->id)->count();
-            
-            if ($parcialidadesCount == 1) {
-                // Cambiar estado de solicitud a "En Proceso"
-                $estadoSolicitudEnProceso = Estado::where('nombre', 'En Proceso')
-                                                 ->where('contexto', 'solicitud')
-                                                 ->firstOrFail()->id;
-                
-                $solicitud = SolicitudPesaje::findOrFail($pesaje->solicitud_id);
-                $solicitud->estado_id = $estadoSolicitudEnProceso;
-                $solicitud->save();
-                
-                // Cambiar estado de cuenta a "Cuenta Creada"
-                $estadoCuentaCreada = Estado::where('nombre', 'Cuenta Creada')
-                                           ->where('contexto', 'cuenta')
-                                           ->firstOrFail()->id;
-                
-                $cuenta = Cuenta::findOrFail($pesaje->cuenta_id);
-                $cuenta->estado_id = $estadoCuentaCreada;
-                $cuenta->save();
-                
-                // Actualizar estado del pesaje a "Pendiente de Verificación"
-                $estadoPesajePendiente = Estado::where('nombre', 'Pendiente de Verificación')
-                                              ->where('contexto', 'pesaje')
-                                              ->firstOrFail()->id;
-                
-                $pesaje->estado_id = $estadoPesajePendiente;
-            }
-            
-            // Verificar criterios de finalización
-            $pesoAlcanzado = $pesoActual >= $solicitud->cantidad_total;
-            $parcialidadesCompletadas = $parcialidadesCount >= $solicitud->cantidad_parcialidades;
-            
-            if ($pesoAlcanzado || $parcialidadesCompletadas) {
-                // Cambiar estado de solicitud a "Completada"
-                $estadoSolicitudCompletada = Estado::where('nombre', 'Completada')
-                                                  ->where('contexto', 'solicitud')
-                                                  ->firstOrFail()->id;
-                
-                $solicitud = SolicitudPesaje::findOrFail($pesaje->solicitud_id);
-                $solicitud->estado_id = $estadoSolicitudCompletada;
-                $solicitud->save();
-            }
-            
-            $pesaje->save();
-            
             DB::commit();
             
-            // Devolver respuesta con información adicional de trazabilidad
             return response()->json([
-                'message' => 'Parcialidad creada con éxito',
+                'message' => 'Parcialidad creada correctamente. Pendiente de aprobación.',
                 'parcialidad' => $parcialidad,
-                'pesaje' => $pesaje->fresh(['estado']),
-                'cuenta' => Cuenta::findOrFail($pesaje->cuenta_id)->fresh(['estado']),
-                'solicitud' => $solicitud->fresh(['estado']),
-                'peso_total_acumulado' => $pesoActual,
-                'peso_maximo_permitido' => $pesoMaximoPermitido,
-                'parcialidades_registradas' => $parcialidadesCount,
-                'parcialidades_totales' => $solicitud->cantidad_parcialidades,
-                'porcentaje_completado_peso' => round(($pesoActual / $solicitud->cantidad_total) * 100, 2) . '%',
-                'porcentaje_completado_parcialidades' => round(($parcialidadesCount / $solicitud->cantidad_parcialidades) * 100, 2) . '%',
-                'estado_completado' => $pesoAlcanzado || $parcialidadesCompletadas
+                'pesaje' => $pesaje
             ], 201);
             
         } catch (\Exception $e) {
@@ -232,11 +154,9 @@ class ParcialidadController extends Controller
     {
         $agricultor = Auth::user()->agricultor;
         $parcialidad = Parcialidad::whereHas('pesaje', function($query) use ($agricultor) {
-            $query->whereHas('cuenta', function($q) use ($agricultor) {
-                $q->where('agricultor_id', $agricultor->id);
-            });
+            $query->where('agricultor_id', $agricultor->id);
         })->where('id', $id)
-          ->with(['transporte', 'transportista', 'estado', 'pesaje'])
+          ->with(['pesaje', 'transporte', 'transportista', 'estado'])
           ->firstOrFail();
         
         return response()->json($parcialidad);

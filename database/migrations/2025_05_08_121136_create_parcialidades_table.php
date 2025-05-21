@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('transporte_id')->constrained('transportes');
             $table->foreignId('transportista_id')->constrained('transportistas');
             $table->decimal('peso', 12, 2);
+            $table->decimal('peso_bascula', 12, 2)->nullable();
             $table->string('tipo_medida', 20);
             $table->dateTime('fecha_recepcion')->nullable();
             $table->foreignId('estado_id')->constrained('estados');

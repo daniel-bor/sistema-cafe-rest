@@ -11,10 +11,14 @@ class Pesaje extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'agricultor_id',
         'medida_peso_id',
         'peso_total',
+        'cantidad_total',
+        'tolerancia',
+        'precio_unitario',
+        'cantidad_parcialidades',
         'estado_id',
-        'solicitud_id',
         'cuenta_id',
         'fecha_creacion',
         'fecha_inicio',
@@ -29,6 +33,14 @@ class Pesaje extends Model
         'updated_at',
         'deleted_at'
     ];
+
+    /**
+     * Relación con Agricultor
+     */
+    public function agricultor()
+    {
+        return $this->belongsTo(Agricultor::class);
+    }
 
     /**
      * Relación con MedidaPeso
@@ -47,14 +59,6 @@ class Pesaje extends Model
     }
 
     /**
-     * Relación con SolicitudPesaje
-     */
-    public function solicitudPesaje()
-    {
-        return $this->belongsTo(SolicitudPesaje::class, 'solicitud_id');
-    }
-
-    /**
      * Relación con Cuenta
      */
     public function cuenta()
@@ -68,5 +72,37 @@ class Pesaje extends Model
     public function parcialidades()
     {
         return $this->hasMany(Parcialidad::class);
+    }
+
+    /**
+     * Verifica si el pesaje está dentro de la tolerancia permitida
+     */
+    public function dentroDeTolerancia()
+    {
+        $pesoMaximoPermitido = $this->cantidad_total * (1 + ($this->tolerancia / 100));
+        return $this->peso_total <= $pesoMaximoPermitido;
+    }
+    
+    /**
+     * Verifica si el pesaje ha alcanzado la cantidad total
+     */
+    public function pesoCompletado()
+    {
+        return $this->peso_total >= $this->cantidad_total;
+    }
+    
+    /**
+     * Verifica si se han completado todas las parcialidades requeridas
+     */
+    public function parcialidadesCompletadas()
+    {
+        $parcialidadesAprobadas = $this->parcialidades()
+            ->whereHas('estado', function($q) {
+                $q->where('nombre', 'Aprobada')
+                  ->orWhere('nombre', 'Verificada');
+            })
+            ->count();
+            
+        return $parcialidadesAprobadas >= $this->cantidad_parcialidades;
     }
 }
