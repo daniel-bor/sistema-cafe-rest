@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'es.agricultor' => \App\Http\Middleware\IsAgricultor::class,
             'es.beneficio' => \App\Http\Middleware\IsBeneficio::class,
+            'es.peso_cabal' => \App\Http\Middleware\IsPesoCabal::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
