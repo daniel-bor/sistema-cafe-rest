@@ -18,14 +18,18 @@ class Parcialidad extends Model
         'transportista_id',
         'peso',
         'peso_bascula',
+        'observaciones_peso',
+        'fecha_peso',
         'tipo_medida',
         'fecha_recepcion',
         'estado_id',
+        'verificada_por',
         'codigo_qr'
     ];
 
     protected $dates = [
         'fecha_recepcion',
+        'fecha_peso',
         'created_at',
         'updated_at',
         'deleted_at'
@@ -61,6 +65,14 @@ class Parcialidad extends Model
     public function estado()
     {
         return $this->belongsTo(Estado::class);
+    }
+
+    /**
+     * Relación con PesoCabal (verificador)
+     */
+    public function verificador()
+    {
+        return $this->belongsTo(PesoCabal::class, 'verificada_por');
     }
 
     /**

@@ -13,15 +13,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('parcialidades', function (Blueprint $table) {
+            
             $table->id();
             $table->foreignId('pesaje_id')->constrained('pesajes');
             $table->foreignId('transporte_id')->constrained('transportes');
             $table->foreignId('transportista_id')->constrained('transportistas');
             $table->decimal('peso', 12, 2);
             $table->decimal('peso_bascula', 12, 2)->nullable();
+            $table->text('observaciones_peso')->nullable();
+            $table->dateTime('fecha_peso')->nullable();
             $table->string('tipo_medida', 20);
             $table->dateTime('fecha_recepcion')->nullable();
             $table->foreignId('estado_id')->constrained('estados');
+            $table->unsignedBigInteger('verificada_por')->nullable();
+            $table->foreign('verificada_por')->references('id')->on('peso_cabals');
             $table->string('codigo_qr', 50);
             $table->timestamps();
             $table->softDeletes();
