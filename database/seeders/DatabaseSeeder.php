@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,       // Crear usuarios
             AgricultorSeeder::class, // Crear agricultor para el usuario con rol de agricultor
             BeneficioSeeder::class,  // Crear beneficio para el usuario con rol de beneficio
+            PesoCabalSeeder::class,  // Crear peso cabal para el usuario con rol de peso cabal
         ]);
 
        DB::table('estados')->insert([

@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PesoCabal;
-use App\Models\Parcialidad;
-use App\Models\Pesaje;
-use App\Models\Cuenta;
 use App\Models\Boleta;
+use App\Models\Cuenta;
 use App\Models\Estado;
+use App\Models\Pesaje;
+use App\Models\PesoCabal;
+use App\Models\Transporte;
+use App\Models\Parcialidad;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Transportista;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PesoCabalController extends Controller
 {
@@ -136,6 +138,26 @@ class PesoCabalController extends Controller
                 // Actualizar estado de la cuenta
                 $cuenta->estado_id = $estadoCuentaCerrada;
                 $cuenta->save();
+            
+                //Liberar Transporte y Transportista
+                $todasLasParcialidades = Parcialidad::where('pesaje_id', $pesaje->id)->get();
+            
+            foreach ($todasLasParcialidades as $parc) {
+                // Liberar transporte
+                $transporte = Transporte::find($parc->transporte_id);
+                if ($transporte) {
+                    $transporte->disponible = true;
+                    $transporte->save();
+                }
+                
+                // Liberar transportista
+                $transportista = Transportista::find($parc->transportista_id);
+                if ($transportista) {
+                    $transportista->disponible = true;
+                    $transportista->save();
+                }
+            }
+
             }
             
             DB::commit();

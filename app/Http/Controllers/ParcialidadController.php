@@ -47,7 +47,7 @@ class ParcialidadController extends Controller
         }
         
         // Verificar que el estado del pesaje permita añadir parcialidades
-        $estadosPermitidos = ['Pendiente', 'Aprobado', 'En Proceso'];
+        $estadosPermitidos = ['Pendiente', 'Aprobado'];
         
         if (!in_array($pesaje->estado->nombre, $estadosPermitidos)) {
             return response()->json([
@@ -65,6 +65,20 @@ class ParcialidadController extends Controller
         if (!$transporte) {
             return response()->json(['message' => 'El transporte no existe o no pertenece a este agricultor'], 404);
         }
+
+        // Verificar que el transporte esté disponible
+        if (!$transporte->disponible) {
+        // Si no está disponible, verificar si ya está asignado a otra parcialidad del mismo pesaje
+        $transporteAsociado = Parcialidad::where('transporte_id', $transporte->id)
+                                       ->where('pesaje_id', $pesaje->id)
+                                       ->exists();
+        
+        if (!$transporteAsociado) {
+            return response()->json([
+                'message' => 'El transporte seleccionado no está disponible y no está asociado a este pesaje'
+            ], 400);
+        }
+      }
         
         // Verificar que el transportista pertenezca al agricultor
         $transportista = Transportista::where('id', $request->transportista_id)
@@ -74,6 +88,21 @@ class ParcialidadController extends Controller
         if (!$transportista) {
             return response()->json(['message' => 'El transportista no existe o no pertenece a este agricultor'], 404);
         }
+        
+        // Verificar que el transportista esté disponible
+     
+    if (!$transportista->disponible) {
+        // Si no está disponible, verificar si ya está asignado a otra parcialidad del mismo pesaje
+        $transportistaAsociado = Parcialidad::where('transportista_id', $transportista->id)
+                                          ->where('pesaje_id', $pesaje->id)
+                                          ->exists();
+        
+        if (!$transportistaAsociado) {
+            return response()->json([
+                'message' => 'El transportista seleccionado no está disponible y no está asociado a este pesaje'
+            ], 400);
+        }
+    }
         
         // Verificar cantidad de parcialidades
         $parcialidadesActuales = Parcialidad::where('pesaje_id', $pesaje->id)->count();
@@ -132,6 +161,16 @@ class ParcialidadController extends Controller
                 'estado_id' => $estadoPendiente,
                 'codigo_qr' => $codigoQR,
             ]);
+
+        if ($transporte->disponible) {
+            $transporte->disponible = false;
+            $transporte->save();
+        }
+
+        if ($transportista->disponible) {
+            $transportista->disponible = false;
+            $transportista->save();
+        }
             
             DB::commit();
             
@@ -161,4 +200,5 @@ class ParcialidadController extends Controller
         
         return response()->json($parcialidad);
     }
+    
 }

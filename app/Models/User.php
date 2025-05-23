@@ -80,4 +80,16 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasOne(Beneficio::class);
     }
+    public function pesoCabal()
+    {
+        return $this->hasOne(PesoCabal::class);
+    }
+            /**
+         * Verifica si el usuario es un peso cabal
+         */
+    public function esPesoCabal()
+    {
+    return $this->rol_id == 3; // Asumiendo que el rol_id 3 es para Peso Cabal
+    }
+    
 }

@@ -23,6 +23,11 @@ class Boleta extends Model
         'updated_at'
     ];
 
+     protected $casts = [
+        'fecha_boleta' => 'datetime',
+    ];
+
+
     /**
      * Relación con Parcialidad
      */
