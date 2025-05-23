@@ -4,20 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Boleta extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
+        'no_boleta',
+        'fecha_boleta',
         'parcialidad_id',
-        'usuario_id',
-        'concepto',
-        'monto',
-        'numero_documento',
-        'referencia',
+        'generada_por', // ID del PesoCabal que generó la boleta
         'observaciones'
+    ];
+
+    protected $dates = [
+        'fecha_boleta',
+        'created_at',
+        'updated_at'
     ];
 
     /**
@@ -29,10 +32,10 @@ class Boleta extends Model
     }
 
     /**
-     * Relación con Usuario que registró la boleta
+     * Relación con PesoCabal
      */
-    public function usuario()
+    public function pesoCabal()
     {
-        return $this->belongsTo(User::class, 'usuario_id');
+        return $this->belongsTo(PesoCabal::class, 'generada_por');
     }
 }

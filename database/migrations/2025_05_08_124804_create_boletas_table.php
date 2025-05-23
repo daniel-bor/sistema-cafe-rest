@@ -13,15 +13,13 @@ return new class extends Migration
     {
         Schema::create('boletas', function (Blueprint $table) {
             $table->id();
+            $table->string('no_boleta', 20)->unique();
+            $table->dateTime('fecha_boleta');
             $table->foreignId('parcialidad_id')->constrained('parcialidades');
-            $table->foreignId('usuario_id')->constrained('users');
-            $table->string('concepto');
-            $table->decimal('monto', 10, 2);
-            $table->string('numero_documento')->nullable();
-            $table->string('referencia')->nullable();
-            $table->string('observaciones')->nullable();
+            $table->unsignedBigInteger('generada_por');
+            $table->foreign('generada_por')->references('id')->on('peso_cabals');
+            $table->text('observaciones')->nullable();
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
