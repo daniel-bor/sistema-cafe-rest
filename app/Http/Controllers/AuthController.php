@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Beneficio;
+use App\Models\PesoCabal;
 use App\Models\Agricultor;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -23,14 +24,17 @@ class AuthController extends Controller
         'email'    => 'required|string|email|max:255|unique:users',
         'password' => 'required|string|min:6|confirmed',
         'rol_id'   => 'required|integer|exists:roles,id',
-        // Campos opcionales para agricultor
+        // Campos  para agricultor
         'nit'      => 'nullable|string|max:20',
         'telefono' => 'nullable|string|max:20',
         'direccion' => 'nullable|string|max:100',
         'observaciones' => 'nullable|string',
-        // Campos opcionales para beneficio
+        // Campos para beneficio
         'nombre_beneficio' => 'nullable|string|max:100',
         'descripcion' => 'nullable|string',
+        // Campos para peso cabal
+        'codigo_empleado' => 'nullable|string|max:20',
+        'area' => 'nullable|string|max:50',
     ]);
 
     $user = User::create([
@@ -60,14 +64,24 @@ class AuthController extends Controller
     
     // Si el usuario es un beneficio (rol_id = 2)
     if ($user->rol_id == 2) {
-        // Importa el modelo Beneficio al principio del archivo
-        // use App\Models\Beneficio;
+    
         Beneficio::create([
             'nombre'      => $request->nombre_beneficio ?? $user->name,
             'direccion'   => $request->direccion,
             'telefono'    => $request->telefono,
             'descripcion' => $request->descripcion ?? 'Beneficio registrado',
             'user_id'     => $user->id,
+        ]);
+    }
+
+    // Si el usuario es un peso cabal (rol_id = 3)
+     if ($user->rol_id == 3) {
+        PesoCabal::create([
+            'nombre'          => $user->name,
+            'codigo_empleado' => $request->codigo_empleado,
+            'area'           => $request->area,
+            'telefono'       => $request->telefono,
+            'user_id'        => $user->id,
         ]);
     }
 
