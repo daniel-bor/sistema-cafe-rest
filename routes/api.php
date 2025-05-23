@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PesajeController;
 use App\Http\Controllers\BeneficioController;
+use App\Http\Controllers\PesoCabalController;
 use App\Http\Controllers\AgricultorController;
 use App\Http\Controllers\TransporteController;
 use App\Http\Controllers\ParcialidadController;
@@ -53,4 +54,13 @@ Route::prefix('beneficio')->middleware(['auth:api'])->group(function () {
     Route::get('parcialidades/pendientes', [BeneficioController::class, 'parcialidadesPendientes']);
     Route::post('parcialidades/{id}/aprobar', [BeneficioController::class, 'aprobarParcialidad']);
     Route::post('parcialidades/{id}/rechazar', [BeneficioController::class, 'rechazarParcialidad']);
+});
+
+Route::prefix('pesocabal')->middleware(['auth:api'])->group(function () {
+    Route::get('perfil', [PesoCabalController::class, 'perfil']);
+    Route::get('parcialidades/pendientes', [PesoCabalController::class, 'parcialidadesPorVerificar']);
+    Route::post('parcialidades/{id}/registrar-peso', [PesoCabalController::class, 'registrarPeso']);
+    Route::post('parcialidades/{id}/generar-boleta', [PesoCabalController::class, 'generarBoleta']);
+    Route::get('boletas', [PesoCabalController::class, 'listarBoletas']);
+    Route::get('boletas/{id}', [PesoCabalController::class, 'verBoleta']);
 });
